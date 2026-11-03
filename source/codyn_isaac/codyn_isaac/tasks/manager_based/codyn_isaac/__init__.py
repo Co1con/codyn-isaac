@@ -1,23 +1,14 @@
-# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
+"""G1 29-DoF velocity tracking with frozen neural-oscillator references."""
 
 import gymnasium as gym
 
-from . import agents
-
-##
-# Register Gym environments.
-##
-
-
-gym.register(
-    id="Template-Codyn-Isaac-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": f"{__name__}.codyn_isaac_env_cfg:CodynIsaacEnvCfg",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:PPORunnerCfg",
-    },
-)
+for name, config in (("Train", "G1CoDynEnvCfg"), ("Play", "G1CoDynPlayEnvCfg")):
+    gym.register(
+        id=f"CoDyn-G1-29DoF-{name}-v0",
+        entry_point=f"{__name__}.env:G1CoDynEnv",
+        disable_env_checker=True,
+        kwargs={
+            "env_cfg_entry_point": f"{__name__}.g1_codyn_vel_env_cfg:{config}",
+            "rsl_rl_cfg_entry_point": f"{__name__}.agents.rsl_rl_ppo_cfg:G1PPORunnerCfg",
+        },
+    )

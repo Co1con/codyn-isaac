@@ -7,10 +7,10 @@ version = "0.1.0"
 category = "isaaclab"
 readme  = "README.md"
 
-title = "Extension Template"
+title = "CoDyn G1 locomotion"
 author = "Isaac Lab Project Developers"
 maintainer = "Isaac Lab Project Developers"
-description="Extension Template for Isaac Lab"
+description="G1 PPO locomotion with speed-conditioned neural oscillators"
 repository = "https://github.com/isaac-sim/IsaacLab.git"
 keywords = ["extension", "template", "isaaclab"]
 

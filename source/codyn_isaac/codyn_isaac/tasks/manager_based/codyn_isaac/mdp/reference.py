@@ -1,0 +1,64 @@
+"""Batched frozen neural oscillators; state order is [environment, leg, hip/knee]."""
+
+import torch
+
+from .oscillator import SpeedOscillator
+
+JOINT_NAMES = ("left_hip_pitch_joint", "left_knee_joint", "right_hip_pitch_joint", "right_knee_joint")
+
+
+class GaitReference:
+    def __init__(self, checkpoint, num_envs, device, substeps=4):
+        data = torch.load(checkpoint, map_location=device, weights_only=True)
+        self.model = SpeedOscillator(data["geometry"], bounded_compensation=data["version"] == 1).to(device)
+        self.model.load_state_dict(data["model_state"])
+        self.model.eval().requires_grad_(False)
+        self.bank = data["phase_bank"].to(device)[:, :-1]
+        self.bank_speeds = data["phase_speeds"].to(device)
+        self.num_envs, self.device, self.substeps = num_envs, device, substeps
+        self.state = torch.empty(num_envs, 2, 2, device=device)
+        self.speed = torch.ones(num_envs, device=device)
+        self.position = torch.empty(num_envs, 4, device=device)
+        self.velocity = torch.empty_like(self.position)
+        self.signs = torch.tensor([-1., 1., -1., 1.], device=device)
+        self.reset(torch.arange(num_envs, device=device), self.speed.clone())
+
+    def _bank_at(self, speed):
+        # 周期表仅用于初始姿态；运行时动力学直接使用命令速度。
+        speed = speed.clamp(self.bank_speeds[0], self.bank_speeds[-1])
+        high = torch.searchsorted(self.bank_speeds, speed.contiguous()).clamp(1, len(self.bank_speeds) - 1)
+        low = high - 1
+        weight = (speed - self.bank_speeds[low]) / (self.bank_speeds[high] - self.bank_speeds[low])
+        return torch.lerp(self.bank[low], self.bank[high], weight[:, None, None])
+
+    @torch.no_grad()
+    def _refresh(self, ids):
+        self.position[ids] = self.state[ids].flatten(1) * self.signs
+        speed = self.speed[ids]
+        velocity = self.model(self.state[ids].reshape(-1, 2), speed.repeat_interleave(2)).reshape(-1, 2, 2)
+        self.velocity[ids] = velocity.flatten(1) * self.signs
+
+    @torch.no_grad()
+    def reset(self, ids, command_speed):
+        self.speed[ids] = command_speed
+        bank = self._bank_at(self.speed[ids])
+        phase = torch.randint(bank.shape[1], (len(ids),), device=self.device)
+        index = torch.stack([phase, (phase + bank.shape[1] // 2) % bank.shape[1]], 1)
+        self.state[ids] = bank[torch.arange(len(ids), device=self.device)[:, None], index]
+        self._refresh(ids)
+
+    @torch.no_grad()
+    def step(self, command_speed, dt):
+        self.speed.copy_(command_speed)
+        parameters = self.model.parameters_at(self.speed.repeat_interleave(2))
+        state = self.state.reshape(-1, 2)
+        h = dt / self.substeps
+        def field(q):
+            return self.model.field(q, parameters)
+        for _ in range(self.substeps):
+            a = field(state); b = field(state + h * a / 2)
+            c = field(state + h * b / 2); d = field(state + h * c)
+            state = state + h * (a + 2 * b + 2 * c + d) / 6
+        self.state.copy_(state.reshape_as(self.state))
+        self._refresh(torch.arange(self.num_envs, device=self.device))
+        return self.position

@@ -1,135 +1,59 @@
-# Template for Isaac Lab Projects
+# CoDyn Isaac Lab — G1 training
 
-## Overview
+Isaac Lab v2.3.2 external template, Manager-Based workflow, RSL-RL/PPO.
 
-This project/repository serves as a template for building projects or extensions based on Isaac Lab.
-It allows you to develop in an isolated environment, outside of the core Isaac Lab repository.
+## Structure
 
-**Key Features:**
+```text
+source/codyn_isaac/codyn_isaac/
+  assets/G1/                         # G1 robot assets
+  assets/oscillator/M01_left.pt       # frozen model weights and initialization cycle bank
+  tasks/manager_based/codyn_isaac/
+    g1_codyn_vel_env_cfg.py           # original G1 configuration, HALO terms replaced
+    env.py                          # reference step/reset synchronization
+    agents/rsl_rl_ppo_cfg.py
+    mdp/
+```
 
-- `Isolation` Work outside the core Isaac Lab repository, ensuring that your development efforts remain self-contained.
-- `Flexibility` This template is set up to allow your code to be run as an extension in Omniverse.
+The original G1 actions, rewards unrelated to HALO, events and terminations are retained.
+The active velocity commands are forward speed and yaw rate. The actor/critic receive
+`[lin_vel_x, ang_vel_z]`; lateral speed is always zero. Isaac Lab retains its standard
+three-slot velocity representation internally for rewards and visualization.
+Forward speed starts at 0.8–1.0 and expands to 0.8–1.6; yaw rate starts at
+-0.3–0.3 and expands to -0.5–0.5. Standing commands are disabled. The learned oscillator replaces the HALO reference
+observation and hip/knee tracking reward. Hip polarity follows the original mapping:
+`[-left_hip, left_knee, -right_hip, right_knee]`. The tracking target is limited to
+G1 soft joint limits. PPO still outputs all 29 joint position actions.
 
-**Keywords:** extension, template, isaaclab
+The two legs share the frozen M01-left model and start half a cycle apart. Their
+states evolve independently; no additional phase coupling or speed filter is added.
+The model receives the original commanded speed directly. The forward command remains within the trained 0.8–1.6 speed-label range.
+Turning is learned by PPO; the reference model itself is not yaw-conditioned.
 
-## Installation
+## Linux / remote GPU
 
-- Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html).
-  We recommend using the conda or uv installation as it simplifies calling Python scripts from the terminal.
-
-- Clone or copy this project/repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
-
-- Using a python interpreter that has Isaac Lab installed, install the library in editable mode using:
-
-    ```bash
-    # use 'PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-    python -m pip install -e source/codyn_isaac
-
-- Verify that the extension is correctly installed by:
-
-    - Listing the available tasks:
-
-        Note: It the task name changes, it may be necessary to update the search pattern `"Template-"`
-        (in the `scripts/list_envs.py` file) so that it can be listed.
-
-        ```bash
-        # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-        python scripts/list_envs.py
-        ```
-
-    - Running a task:
-
-        ```bash
-        # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-        python scripts/<RL_LIBRARY>/train.py --task=<TASK_NAME>
-        ```
-
-    - Running a task with dummy agents:
-
-        These include dummy agents that output zero or random agents. They are useful to ensure that the environments are configured correctly.
-
-        - Zero-action agent
-
-            ```bash
-            # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-            python scripts/zero_agent.py --task=<TASK_NAME>
-            ```
-        - Random-action agent
-
-            ```bash
-            # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-            python scripts/random_agent.py --task=<TASK_NAME>
-            ```
-
-### Set up IDE (Optional)
-
-To setup the IDE, please follow these instructions:
-
-- Run VSCode Tasks, by pressing `Ctrl+Shift+P`, selecting `Tasks: Run Task` and running the `setup_python_env` in the drop down menu.
-  When running this task, you will be prompted to add the absolute path to your Isaac Sim installation.
-
-If everything executes correctly, it should create a file .python.env in the `.vscode` directory.
-The file contains the python paths to all the extensions provided by Isaac Sim and Omniverse.
-This helps in indexing all the python modules for intelligent suggestions while writing code.
-
-### Setup as Omniverse Extension (Optional)
-
-We provide an example UI extension that will load upon enabling your extension defined in `source/codyn_isaac/codyn_isaac/ui_extension_example.py`.
-
-To enable your extension, follow these steps:
-
-1. **Add the search path of this project/repository** to the extension manager:
-    - Navigate to the extension manager using `Window` -> `Extensions`.
-    - Click on the **Hamburger Icon**, then go to `Settings`.
-    - In the `Extension Search Paths`, enter the absolute path to the `source` directory of this project/repository.
-    - If not already present, in the `Extension Search Paths`, enter the path that leads to Isaac Lab's extension directory directory (`IsaacLab/source`)
-    - Click on the **Hamburger Icon**, then click `Refresh`.
-
-2. **Search and enable your extension**:
-    - Find your extension under the `Third Party` category.
-    - Toggle it to enable your extension.
-
-## Code formatting
-
-We have a pre-commit template to automatically format your code.
-To install pre-commit:
+Use an existing Isaac Lab v2.3.2 environment with its RSL-RL dependencies installed.
+From this repository root:
 
 ```bash
-pip install pre-commit
+python -m pip install -e source/codyn_isaac
+python scripts/list_envs.py
+python scripts/check_reference.py --device cuda --num_envs 1024
+python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Train-v0 --num_envs 32 --max_iterations 2 --headless
+python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Train-v0 --num_envs 4096 --headless
+python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Play-v0 --num_envs 1
 ```
 
-Then you can run pre-commit with:
+`check_reference.py` checks the PyTorch reference core, subset resets and observation
+symmetry without starting Isaac Sim. It does not validate robot physics or PPO.
+Run the 32-environment smoke test on the remote machine before full training.
+Training logs retain the official `logs/rsl_rl/g1_codyn_velocity/` structure.
+
+To refresh the frozen oscillator from an offline training checkpoint:
 
 ```bash
-pre-commit run --all-files
+python scripts/export_oscillator.py --checkpoint /path/to/model.pt
 ```
 
-## Troubleshooting
-
-### Pylance Missing Indexing of Extensions
-
-In some VsCode versions, the indexing of part of the extensions is missing.
-In this case, add the path to your extension in `.vscode/settings.json` under the key `"python.analysis.extraPaths"`.
-
-```json
-{
-    "python.analysis.extraPaths": [
-        "<path-to-ext-repo>/source/codyn_isaac"
-    ]
-}
-```
-
-### Pylance Crash
-
-If you encounter a crash in `pylance`, it is probable that too many files are indexed and you run out of memory.
-A possible solution is to exclude some of omniverse packages that are not used in your project.
-To do so, modify `.vscode/settings.json` and comment out packages under the key `"python.analysis.extraPaths"`
-Some examples of packages that can likely be excluded are:
-
-```json
-"<path-to-isaac-sim>/extscache/omni.anim.*"         // Animation packages
-"<path-to-isaac-sim>/extscache/omni.kit.*"          // Kit UI tools
-"<path-to-isaac-sim>/extscache/omni.graph.*"        // Graph UI tools
-"<path-to-isaac-sim>/extscache/omni.services.*"     // Services tools
-...
-```
+The export script uses NumPy, SciPy and PyTorch and regenerates the phase bank from
+the model itself. The deployed training package only needs PyTorch for inference.

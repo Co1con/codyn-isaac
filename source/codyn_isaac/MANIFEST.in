@@ -1,0 +1,3 @@
+recursive-include codyn_isaac/assets *
+recursive-include config *.toml
+global-exclude *.py[cod]

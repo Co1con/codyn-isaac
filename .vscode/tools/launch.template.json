@@ -13,18 +13,18 @@
             "console": "integratedTerminal",
         },
         {
-            "name": "Python: Train Template-Codyn-Isaac-v0 with rsl_rl (PPO)",
+            "name": "Python: Train CoDyn-G1-29DoF-Train-v0 with rsl_rl (PPO)",
             "type": "debugpy",
             "request": "launch",
-            "args" : ["--task", "Template-Codyn-Isaac-v0", "--num_envs", "4096", "--headless"],
+            "args" : ["--task", "CoDyn-G1-29DoF-Train-v0", "--num_envs", "4096", "--headless"],
             "program": "${workspaceFolder}/scripts/rsl_rl/train.py",
             "console": "integratedTerminal",
         },
         {
-            "name": "Python: Play Template-Codyn-Isaac-v0 with rsl_rl (PPO)",
+            "name": "Python: Play CoDyn-G1-29DoF-Play-v0 with rsl_rl (PPO)",
             "type": "debugpy",
             "request": "launch",
-            "args" : ["--task", "Template-Codyn-Isaac-v0", "--num_envs", "32"],
+            "args" : ["--task", "CoDyn-G1-29DoF-Play-v0", "--num_envs", "32"],
             "program": "${workspaceFolder}/scripts/rsl_rl/play.py",
             "console": "integratedTerminal",
         },
@@ -40,10 +40,10 @@
             }
         },
         {
-            "name": "Docker: Train Template-Codyn-Isaac-v0 with rsl_rl (PPO)",
+            "name": "Docker: Train CoDyn-G1-29DoF-Train-v0 with rsl_rl (PPO)",
             "type": "debugpy",
             "request": "launch",
-            "args" : ["--task", "Template-Codyn-Isaac-v0", "--num_envs", "4096", "--headless"],
+            "args" : ["--task", "CoDyn-G1-29DoF-Train-v0", "--num_envs", "4096", "--headless"],
             "program": "${workspaceFolder}/scripts/rsl_rl/train.py",
             "console": "integratedTerminal",
             "env": {
@@ -51,10 +51,10 @@
             },
         },
         {
-            "name": "Docker: Play Template-Codyn-Isaac-v0 with rsl_rl (PPO)",
+            "name": "Docker: Play CoDyn-G1-29DoF-Play-v0 with rsl_rl (PPO)",
             "type": "debugpy",
             "request": "launch",
-            "args" : ["--task", "Template-Codyn-Isaac-v0", "--num_envs", "32"],
+            "args" : ["--task", "CoDyn-G1-29DoF-Play-v0", "--num_envs", "32"],
             "program": "${workspaceFolder}/scripts/rsl_rl/play.py",
             "console": "integratedTerminal",
             "env": {
