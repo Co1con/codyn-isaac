@@ -8,16 +8,19 @@ import path remain compatible. Explicit baseline aliases are
 `g1_codyn_residual_vel_env_cfg.py` inherits the baseline settings and changes:
 
 - Removes only `oscillator_tracking`. Velocity tracking and all other rewards remain.
-- Left/right hip pitch and knee: `target = oscillator_reference + 0.5 * action`.
+- Left/right hip pitch and knee: `target = oscillator_reference + 0.1 * action`.
+- Hip/knee scale is fixed at 0.1 rad, with no extra residual action clipping.
+  The runner's existing action limit of ±5 gives a maximum correction of ±0.5 rad (±28.65°).
 - Other 25 joints: `target = default_joint_position + 0.25 * action`.
 - Reference uses the existing hip signs, soft-limit clipping, per-step cache and resets.
 - Keeps one 29-dimensional action term in the original joint order, including symmetry augmentation.
 - Separates residual logs under `logs/rsl_rl/g1_codyn_residual_velocity/`; PPO hyperparameters are unchanged.
 
 The oscillator remains frozen and autonomous. This action change does not add body
-feedback or joint training. The scale is a multiplier, not a hard residual bound;
-the existing runner action clipping remains 5.0. Reference clipping is unchanged,
-and no extra clipping is introduced for the summed target.
+feedback or joint training. All joints retain the runner's existing 5.0 action
+clipping. Reference clipping is unchanged, and no extra clipping is introduced
+for the summed target. A small scale reduces the angle change for a given action;
+it does not prevent PPO from learning larger actions to compensate.
 
 Run from this directory in the existing Isaac Lab environment:
 
@@ -28,8 +31,8 @@ python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Residual-Train-v0 --num_env
 python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Residual-Play-v0 --num_envs 1
 ```
 
-Start a new residual run: baseline checkpoints have different action semantics.
-Do not treat loading the unchanged baseline policy as an equivalent residual controller.
+Start a new residual run after changing the action scale: baseline checkpoints
+and earlier residual checkpoints using scale 0.5 have different action semantics.
 
 Simulation-free checks (PyTorch required):
 
