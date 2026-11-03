@@ -5,3 +5,4 @@ from .observations import *
 from .events import *
 from .rewards import *
 from .symmetry import *
+from .actions import *

@@ -40,3 +40,9 @@ class G1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
             data_augmentation_func=mdp.compute_g1_symmetric_states,
         ),
     )
+
+
+@configclass
+class G1ResidualPPORunnerCfg(G1PPORunnerCfg):
+    # Separate checkpoints by action semantics; PPO settings are inherited unchanged.
+    experiment_name = "g1_codyn_residual_velocity"
