@@ -14,6 +14,9 @@
 **/*.usdc
 **/*.usdz
 
+# Ship the local G1 29-DoF model required by the training task.
+!source/codyn_isaac/codyn_isaac/assets/G1/29dof/**/*.usd
+
 # Python
 .DS_Store
 **/*.egg-info/

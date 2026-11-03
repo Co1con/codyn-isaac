@@ -10,12 +10,17 @@ source/codyn_isaac/codyn_isaac/
   assets/oscillator/M01_left.pt       # frozen model weights and initialization cycle bank
   tasks/manager_based/codyn_isaac/
     g1_codyn_vel_env_cfg.py           # original G1 configuration, HALO terms replaced
-    env.py                          # reference step/reset synchronization
     agents/rsl_rl_ppo_cfg.py
+    mdp/observations.py              # reference inference, cached once per environment step
+    mdp/events.py                    # reference reset event
     mdp/
 ```
 
 The original G1 actions, rewards unrelated to HALO, events and terminations are retained.
+Tasks use Isaac Lab's standard `ManagerBasedRLEnv`. Reference rewards and observations
+share one oscillator state; reset events mark the environments to reinitialize after
+their velocity commands refresh. The required four G1 29-DoF USD files are included
+in Git, overriding the template's default USD ignore rule.
 The active velocity commands are forward speed and yaw rate. The actor/critic receive
 `[lin_vel_x, ang_vel_z]`; lateral speed is always zero. Isaac Lab retains its standard
 three-slot velocity representation internally for rewards and visualization.
@@ -44,7 +49,7 @@ python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Train-v0 --num_envs 4096 --
 python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Play-v0 --num_envs 1
 ```
 
-`check_reference.py` checks the PyTorch reference core, subset resets and observation
+`check_reference.py` checks the PyTorch reference core, per-step caching, subset resets and observation
 symmetry without starting Isaac Sim. It does not validate robot physics or PPO.
 Run the 32-environment smoke test on the remote machine before full training.
 Training logs retain the official `logs/rsl_rl/g1_codyn_velocity/` structure.

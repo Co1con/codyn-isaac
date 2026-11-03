@@ -266,6 +266,8 @@ class G1CoDynTerminationsCfg:
 
 @configclass
 class G1CoDynEventsCfg:
+    reset_oscillator = EventTerm(func=mdp.reset_oscillator, mode="reset")
+
     physics_material = EventTerm(
         func=mdp.randomize_rigid_body_material,
         mode="startup",
