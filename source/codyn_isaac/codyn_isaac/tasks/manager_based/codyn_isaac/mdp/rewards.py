@@ -6,6 +6,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
 from isaaclab.utils.math import quat_apply_inverse, yaw_quat
 from .observations import oscillator_position
+from .reference import JOINT_NAMES
 
 def track_lin_vel_xy_yaw_frame_exp(
     env: ManagerBasedRLEnv,
@@ -80,3 +81,10 @@ def oscillator_joint_tracking(env, asset_cfg=SceneEntityCfg("robot"), command_na
     joint_ids = [asset.data.joint_names.index(name) for name in joint_names]
     actual = asset.data.joint_pos[:, joint_ids]
     return torch.exp(-(actual - oscillator_position(env)).square() / 0.1).sum(dim=1)
+
+
+def oscillator_joint_deviation_l2(env, asset_cfg=SceneEntityCfg("robot"), joint_names=JOINT_NAMES):
+    """Squared actual hip/knee error against the unmodified oscillator reference, in rad²."""
+    asset = env.scene[asset_cfg.name]
+    ids = [asset.data.joint_names.index(name) for name in joint_names]
+    return (asset.data.joint_pos[:, ids] - oscillator_position(env)).square().sum(dim=1)

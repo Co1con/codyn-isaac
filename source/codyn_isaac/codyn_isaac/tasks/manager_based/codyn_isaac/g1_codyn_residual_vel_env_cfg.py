@@ -1,5 +1,6 @@
-"""Baseline settings with four reference-plus-residual targets and no trajectory tracking reward."""
+"""Reference-plus-residual targets with a weak quadratic gait deviation penalty."""
 
+from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.utils import configclass
 
 from . import mdp
@@ -25,6 +26,7 @@ class G1CoDynResidualActionsCfg:
 @configclass
 class G1CoDynResidualRewardsCfg(G1CoDynRewardsCfg):
     oscillator_tracking = None
+    oscillator_deviation = RewTerm(func=mdp.oscillator_joint_deviation_l2, weight=-0.2)
 
 
 @configclass

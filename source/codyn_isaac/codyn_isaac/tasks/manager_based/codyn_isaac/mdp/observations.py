@@ -1,7 +1,7 @@
 """Reference observation shared by rewards and observations; advance once per environment step."""
 
 import torch
-from .reference import GaitReference, JOINT_NAMES
+from .reference import GaitReference
 
 
 def planar_velocity_commands(env, command_name="base_velocity"):
@@ -12,8 +12,6 @@ def planar_velocity_commands(env, command_name="base_velocity"):
 def get_reference(env):
     if not hasattr(env, "gait_reference"):
         env.gait_reference = GaitReference(env.cfg.oscillator_checkpoint, env.num_envs, env.device)
-        robot = env.scene["robot"]
-        env.gait_reference.joint_ids = [robot.data.joint_names.index(name) for name in JOINT_NAMES]
         env.gait_reference_step = env.common_step_counter
         env.gait_reference_reset = torch.zeros(env.num_envs, device=env.device, dtype=torch.bool)
     return env.gait_reference
@@ -34,8 +32,7 @@ def step_reference(env):
 
 
 def oscillator_position(env):
-    reference = step_reference(env)
-    limits = env.scene["robot"].data.soft_joint_pos_limits[:, reference.joint_ids]
-    return reference.position.clamp(limits[..., 0], limits[..., 1])
+    """Return the model trajectory with robot hip signs, without angle clipping."""
+    return step_reference(env).position
 
 

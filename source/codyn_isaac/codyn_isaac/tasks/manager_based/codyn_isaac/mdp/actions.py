@@ -12,8 +12,8 @@ from .reference import JOINT_NAMES
 class OscillatorResidualJointPositionAction(JointPositionAction):
     """Hip/knee targets = reference + scaled action; all other targets stay unchanged.
 
-    Reference positions already include the G1 hip signs and reference soft-limit
-    clipping. Use the observation's cached control-step reference and hold targets
+    Reference positions include the G1 hip signs without angle clipping.
+    Use the observation's cached control-step reference and hold targets
     across physics substeps. Do not add the default pose to the four references.
     """
 

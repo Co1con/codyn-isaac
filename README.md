@@ -7,20 +7,28 @@ import path remain compatible. Explicit baseline aliases are
 
 `g1_codyn_residual_vel_env_cfg.py` inherits the baseline settings and changes:
 
-- Removes only `oscillator_tracking`. Velocity tracking and all other rewards remain.
+- Replaces the positive `oscillator_tracking` reward with a weak quadratic penalty:
+  `oscillator_deviation = -0.2 * sum((actual_hip_knee - oscillator_reference)**2)`.
+  Angles use radians and the four joints are left/right hip pitch and knee.
+  Velocity tracking and other rewards are inherited from the baseline configuration.
 - Left/right hip pitch and knee: `target = oscillator_reference + 0.1 * action`.
 - Hip/knee scale is fixed at 0.1 rad, with no extra residual action clipping.
   The runner's existing action limit of ±5 gives a maximum correction of ±0.5 rad (±28.65°).
 - Other 25 joints: `target = default_joint_position + 0.25 * action`.
-- Reference uses the existing hip signs, soft-limit clipping, per-step cache and resets.
+- Reference uses the existing hip signs, per-step cache and resets, without angle clipping.
 - Keeps one 29-dimensional action term in the original joint order, including symmetry augmentation.
 - Separates residual logs under `logs/rsl_rl/g1_codyn_residual_velocity/`; PPO hyperparameters are unchanged.
 
 The oscillator remains frozen and autonomous. This action change does not add body
 feedback or joint training. All joints retain the runner's existing 5.0 action
-clipping. Reference clipping is unchanged, and no extra clipping is introduced
-for the summed target. A small scale reduces the angle change for a given action;
+clipping. Neither the oscillator reference nor the summed target is clipped to soft
+joint limits. A small scale reduces the angle change for a given action;
 it does not prevent PPO from learning larger actions to compensate.
+
+Both tasks penalize waist pitch/roll deviation with `joint_deviation_l1` at weight
+-2.0, and waist yaw deviation separately at -0.2. Existing exported policies retain
+their old learned behavior; retraining or fine-tuning is required to learn these rewards.
+Policies trained before reference clipping was removed saw a different reference observation.
 
 Run from this directory in the existing Isaac Lab environment:
 

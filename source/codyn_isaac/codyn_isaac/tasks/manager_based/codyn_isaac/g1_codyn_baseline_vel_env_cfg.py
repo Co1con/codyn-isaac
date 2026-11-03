@@ -178,15 +178,13 @@ class G1CoDynRewardsCfg:
     )
     joint_deviation_waists = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.5,
-        params={
-            "asset_cfg": SceneEntityCfg(
-                "robot",
-                joint_names=[
-                    "waist.*",
-                ],
-            )
-        },
+        weight=-2.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["waist_pitch_joint", "waist_roll_joint"])},
+    )
+    joint_deviation_waist_yaw = RewTerm(
+        func=mdp.joint_deviation_l1,
+        weight=-0.2,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["waist_yaw_joint"])},
     )
     joint_deviation_legs = RewTerm(
         func=mdp.joint_deviation_l1,

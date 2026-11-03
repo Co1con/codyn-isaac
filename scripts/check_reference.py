@@ -61,6 +61,11 @@ def main():
         scene={"robot": types.SimpleNamespace(data=types.SimpleNamespace(joint_names=names, soft_joint_pos_limits=limits))},
     )
     observations.oscillator_position(env)
+    # A narrow robot limit must never reshape the learned reference waveform.
+    limits[..., 0] = 0.20; limits[..., 1] = 0.21
+    raw = env.gait_reference.position.clone()
+    torch.testing.assert_close(observations.oscillator_position(env), raw, rtol=0, atol=0)
+    assert ((raw < 0.20) | (raw > 0.21)).any()
     for step in range(1, 4):
         env.common_step_counter = step
         observations.oscillator_position(env)
@@ -84,7 +89,7 @@ def main():
     torch.testing.assert_close(mirrored[:, 6], obs[:, 6])
     torch.testing.assert_close(mirrored[:, 7], -obs[:, 7])
     torch.testing.assert_close(mirrored[:, -4:], obs[:, -4:][:, [2, 3, 0, 1]])
-    print(f"PASS: {args.num_envs} environments, {args.steps} steps, {args.device}; frozen weights, subset reset, finite dynamics, joint mapping, per-step cache, reset commands, symmetry.")
+    print(f"PASS: {args.num_envs} environments, {args.steps} steps, {args.device}; frozen weights, subset reset, finite dynamics, unclipped reference, joint mapping, per-step cache, reset commands, symmetry.")
 
 
 if __name__ == "__main__":
