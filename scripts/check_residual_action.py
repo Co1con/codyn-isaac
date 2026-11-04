@@ -69,14 +69,14 @@ def main():
     ids = [names.index(name) for name in reference_names]
     others = [i for i in range(29) if i not in ids]
     assert residual.action_dim == 29
-    torch.testing.assert_close(residual._scale[:, ids], torch.full((3, 4), 0.1))
+    torch.testing.assert_close(residual._scale[:, ids], torch.full((3, 4), 0.05))
     torch.testing.assert_close(residual._scale[:, others], torch.full((3, 25), 0.25))
     torch.manual_seed(42)
     for actions in (torch.zeros(3, 29), torch.randn(3, 29), torch.full((3, 29), 5.0), torch.full((3, 29), -5.0)):
         baseline.process_actions(actions)
         reference = env.reference.clone()
         residual.process_actions(actions)
-        torch.testing.assert_close(residual.processed_actions[:, ids], reference + 0.1 * actions[:, ids])
+        torch.testing.assert_close(residual.processed_actions[:, ids], reference + 0.05 * actions[:, ids])
         torch.testing.assert_close(residual.processed_actions[:, others], baseline.processed_actions[:, others])
         torch.testing.assert_close(env.reference, reference, rtol=0, atol=0)
         torch.testing.assert_close(residual.raw_actions, actions)

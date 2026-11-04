@@ -7,7 +7,7 @@ from .. import mdp
 
 
 @configclass
-class G1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
+class G1BaselinePPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 50000
     save_interval = 100
@@ -43,6 +43,6 @@ class G1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
 
 @configclass
-class G1ResidualPPORunnerCfg(G1PPORunnerCfg):
+class G1ResidualPPORunnerCfg(G1BaselinePPORunnerCfg):
     # Separate checkpoints by action semantics; PPO settings are inherited unchanged.
     experiment_name = "g1_codyn_residual_velocity"

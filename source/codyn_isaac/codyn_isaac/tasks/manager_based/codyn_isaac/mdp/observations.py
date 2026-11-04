@@ -11,7 +11,8 @@ def planar_velocity_commands(env, command_name="base_velocity"):
 
 def get_reference(env):
     if not hasattr(env, "gait_reference"):
-        env.gait_reference = GaitReference(env.cfg.oscillator_checkpoint, env.num_envs, env.device)
+        env.gait_reference = GaitReference(env.cfg.oscillator_checkpoint, env.num_envs, env.device,
+                                           coupling_gain=env.cfg.oscillator_coupling_gain)
         env.gait_reference_step = env.common_step_counter
         env.gait_reference_reset = torch.zeros(env.num_envs, device=env.device, dtype=torch.bool)
     return env.gait_reference

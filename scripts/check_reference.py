@@ -55,7 +55,7 @@ def main():
     commands = torch.zeros(args.num_envs, 3, device=args.device); commands[:, 0] = 1.0
     limits = torch.tensor([-10.0, 10.0], device=args.device).expand(args.num_envs, len(names), 2)
     env = types.SimpleNamespace(
-        cfg=types.SimpleNamespace(oscillator_checkpoint=PACKAGE / "assets/oscillator/M01_left.pt"),
+        cfg=types.SimpleNamespace(oscillator_checkpoint=PACKAGE / "assets/oscillator/M01_left.pt", oscillator_coupling_gain=0.25),
         num_envs=args.num_envs, device=args.device, common_step_counter=0, step_dt=0.02,
         command_manager=types.SimpleNamespace(get_command=lambda name: commands),
         scene={"robot": types.SimpleNamespace(data=types.SimpleNamespace(joint_names=names, soft_joint_pos_limits=limits))},

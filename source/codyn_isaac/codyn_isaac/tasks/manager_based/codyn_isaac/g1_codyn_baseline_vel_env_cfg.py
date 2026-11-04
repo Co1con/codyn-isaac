@@ -31,7 +31,7 @@ G1_REFERENCE_JOINT_NAMES = (
 
 
 @configclass
-class G1RobotSceneCfg(InteractiveSceneCfg):
+class G1CoDynBaselineSceneCfg(InteractiveSceneCfg):
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
@@ -64,7 +64,7 @@ class G1RobotSceneCfg(InteractiveSceneCfg):
 
 
 @configclass
-class G1CoDynObservationsCfg:
+class G1CoDynBaselineObservationsCfg:
     @configclass
     class PolicyCfg(ObsGroup):
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, scale=0.2, noise=Unoise(n_min=-0.2, n_max=0.2))
@@ -108,7 +108,7 @@ class G1CoDynObservationsCfg:
 
 
 @configclass
-class G1CoDynCommandsCfg:
+class G1CoDynBaselineCommandsCfg:
     base_velocity = mdp.UniformLevelVelocityCommandCfg(
         asset_name="robot",
         resampling_time_range=(10.0, 10.0),
@@ -126,14 +126,14 @@ class G1CoDynCommandsCfg:
 
 
 @configclass
-class G1CoDynActionsCfg:
+class G1CoDynBaselineActionsCfg:
     JointPositionAction = mdp.JointPositionActionCfg(
         asset_name="robot", joint_names=[".*"], scale=0.25, use_default_offset=True
     )
 
 
 @configclass
-class G1CoDynRewardsCfg:
+class G1CoDynBaselineRewardsCfg:
     # -- task
     track_lin_vel_xy = RewTerm(
         func=mdp.track_lin_vel_xy_yaw_frame_exp,
@@ -256,14 +256,14 @@ class G1CoDynRewardsCfg:
 
 
 @configclass
-class G1CoDynTerminationsCfg:
+class G1CoDynBaselineTerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_height = DoneTerm(func=mdp.root_height_below_minimum, params={"minimum_height": 0.2})
     bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": 0.8})
 
 
 @configclass
-class G1CoDynEventsCfg:
+class G1CoDynBaselineEventsCfg:
     reset_oscillator = EventTerm(func=mdp.reset_oscillator, mode="reset")
 
     physics_material = EventTerm(
@@ -320,26 +320,28 @@ class G1CoDynEventsCfg:
 
 
 @configclass
-class G1CoDynCurriculumCfg:
+class G1CoDynBaselineCurriculumCfg:
     lin_vel_cmd_levels = CurrTerm(mdp.lin_vel_cmd_levels)
     ang_vel_cmd_levels = CurrTerm(mdp.ang_vel_cmd_levels)
 
 
 @configclass
-class G1CoDynEnvCfg(ManagerBasedRLEnvCfg):
+class G1CoDynBaselineEnvCfg(ManagerBasedRLEnvCfg):
     oscillator_checkpoint: str = str(Path(__file__).resolve().parents[3] / "assets" / "oscillator" / "M01_left.pt")
 
+    oscillator_coupling_gain: float = 0.25
+
     # Scene settings
-    scene: G1RobotSceneCfg = G1RobotSceneCfg(num_envs=4096, env_spacing=2.5)
+    scene: G1CoDynBaselineSceneCfg = G1CoDynBaselineSceneCfg(num_envs=4096, env_spacing=2.5)
     # Basic settings
-    observations: G1CoDynObservationsCfg = G1CoDynObservationsCfg()
-    actions: G1CoDynActionsCfg = G1CoDynActionsCfg()
-    commands: G1CoDynCommandsCfg = G1CoDynCommandsCfg()
+    observations: G1CoDynBaselineObservationsCfg = G1CoDynBaselineObservationsCfg()
+    actions: G1CoDynBaselineActionsCfg = G1CoDynBaselineActionsCfg()
+    commands: G1CoDynBaselineCommandsCfg = G1CoDynBaselineCommandsCfg()
     # MDP settings
-    rewards: G1CoDynRewardsCfg = G1CoDynRewardsCfg()
-    terminations: G1CoDynTerminationsCfg = G1CoDynTerminationsCfg()
-    events: G1CoDynEventsCfg = G1CoDynEventsCfg()
-    curriculum: G1CoDynCurriculumCfg = G1CoDynCurriculumCfg()
+    rewards: G1CoDynBaselineRewardsCfg = G1CoDynBaselineRewardsCfg()
+    terminations: G1CoDynBaselineTerminationsCfg = G1CoDynBaselineTerminationsCfg()
+    events: G1CoDynBaselineEventsCfg = G1CoDynBaselineEventsCfg()
+    curriculum: G1CoDynBaselineCurriculumCfg = G1CoDynBaselineCurriculumCfg()
 
     def __post_init__(self):
         # general settings
@@ -365,7 +367,7 @@ class G1CoDynEnvCfg(ManagerBasedRLEnvCfg):
 
 
 @configclass
-class G1CoDynPlayEnvCfg(G1CoDynEnvCfg):
+class G1CoDynBaselinePlayEnvCfg(G1CoDynBaselineEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.scene.num_envs = 1
