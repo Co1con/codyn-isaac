@@ -1,7 +1,7 @@
 seed: 42
 device: cuda:0
 num_steps_per_env: 24
-max_iterations: 5000
+max_iterations: 2000
 empirical_normalization: false
 obs_groups: {}
 clip_actions: 5.0
@@ -11,9 +11,9 @@ run_name: codyn_baseline
 logger: tensorboard
 neptune_project: isaaclab
 wandb_project: isaaclab
-resume: false
-load_run: .*
-load_checkpoint: model_.*.pt
+resume: true
+load_run: 2026-11-04_13-30-06_codyn_baseline
+load_checkpoint: model_2999.pt
 class_name: OnPolicyRunner
 policy:
   class_name: ActorCritic

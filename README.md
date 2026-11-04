@@ -48,9 +48,11 @@ Run from this directory in the existing Isaac Lab environment:
 
 ```bash
 # First validate environment setup and one short training run.
-python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Residual-Train-v0 --num_envs 32 --max_iterations 2 --headless
-python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Residual-Train-v0 --num_envs 4096 --headless
-python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Residual-Play-v0 --num_envs 1
+python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Baseline-Train-v0 --num_envs 2048 --max_iterations 3000 --run_name codyn_baseline --video --headless
+python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Baseline-Play-v0 --num_envs 16
+
+python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Residual-Train-v0 --num_envs 2048 --max_iterations 3000 --run_name codyn_residual --video --headless
+python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Residual-Play-v0 --num_envs 16
 ```
 
 Start a new residual run after changing the action scale: baseline checkpoints
