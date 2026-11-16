@@ -5,7 +5,7 @@ from isaaclab.assets import Articulation
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
 from isaaclab.utils.math import quat_apply_inverse, yaw_quat
-from .observations import oscillator_position
+from .observations import _gait_cycle, oscillator_position
 from .reference import JOINT_NAMES
 
 def track_lin_vel_xy_yaw_frame_exp(
@@ -44,6 +44,27 @@ def feet_slide(
     contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
     feet_vel_xy = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2]
     return torch.sum(contacts * torch.sum(torch.square(feet_vel_xy), dim=-1), dim=1)
+
+
+def feet_gait(
+    env: ManagerBasedRLEnv,
+    period: float,
+    offset: list[float],
+    sensor_cfg: SceneEntityCfg,
+    threshold: float = 0.5,
+    command_name: str | None = None,
+) -> torch.Tensor:
+    """Reward agreement between expected stance and measured foot contact."""
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    contact = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids] > 0
+    phase = _gait_cycle(env, period)
+    stance = torch.stack([(phase + shift).remainder(1.0) < threshold for shift in offset], dim=-1)
+    reward = (stance == contact).sum(dim=-1, dtype=torch.float32)
+    if command_name is not None:
+        speed = env.command_manager.get_command(command_name).norm(dim=-1)
+        reward = reward * (speed > 0.1)
+    return reward
+
 
 def foot_clearance_reward(
     env: ManagerBasedRLEnv,

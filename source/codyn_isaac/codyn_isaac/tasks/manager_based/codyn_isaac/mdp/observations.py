@@ -4,6 +4,16 @@ import torch
 from .reference import GaitReference
 
 
+def _gait_cycle(env, period: float) -> torch.Tensor:
+    return (env.episode_length_buf / (period / env.step_dt)).remainder(1.0)
+
+
+def gait_phase(env, period: float) -> torch.Tensor:
+    """Encode the episode clock as sine and cosine of the gait phase."""
+    angle = 2.0 * torch.pi * _gait_cycle(env, period)
+    return torch.stack((angle.sin(), angle.cos()), dim=-1)
+
+
 def planar_velocity_commands(env, command_name="base_velocity"):
     """Policy/critic command order: forward speed, yaw rate; lateral speed is fixed at zero."""
     return env.command_manager.get_command(command_name)[:, [0, 2]]

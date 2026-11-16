@@ -46,3 +46,9 @@ class G1BaselinePPORunnerCfg(RslRlOnPolicyRunnerCfg):
 class G1ResidualPPORunnerCfg(G1BaselinePPORunnerCfg):
     # Separate checkpoints by action semantics; PPO settings are inherited unchanged.
     experiment_name = "g1_codyn_residual_velocity"
+
+
+@configclass
+class G1UnitreeBaselinePPORunnerCfg(G1BaselinePPORunnerCfg):
+    experiment_name = "g1_baseline_velocity"
+    algorithm = G1BaselinePPORunnerCfg().algorithm.replace(symmetry_cfg=None)
