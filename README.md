@@ -13,7 +13,7 @@ Baseline configuration classes now use the `G1CoDynBaseline...Cfg` names, includ
   `oscillator_deviation = -0.2 * sum((actual_hip_knee - oscillator_reference)**2)`.
   Angles use radians and the four joints are left/right hip pitch and knee.
   Velocity tracking and other rewards are inherited from the baseline configuration.
-- Left/right hip pitch and knee: `target = oscillator_reference + 0.05 * action`.
+- Left/right hip pitch and knee: `target = oscillator_reference + 0.1 * action`.
 - Hip/knee scale is fixed at 0.05 rad, with no extra residual action clipping.
   The runner's existing action limit of ±5 gives a maximum correction of ±0.25 rad (±14.32°).
 - Other 25 joints: `target = default_joint_position + 0.25 * action`.
@@ -48,10 +48,13 @@ Run from this directory in the existing Isaac Lab environment:
 
 ```bash
 # First validate environment setup and one short training run.
-python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Baseline-Train-v0 --num_envs 2048 --max_iterations 3000 --run_name codyn_baseline --video --headless
+python scripts/rsl_rl/train.py --task G1-29DoF-Baseline-Train-v0 --num_envs 2048 --max_iterations 5000 --run_name baseline --video --headless
+python scripts/rsl_rl/play.py --task G1-29DoF-Baseline-Play-v0 --num_envs 16
+
+python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Baseline-Train-v0 --num_envs 2048 --max_iterations 5000 --run_name codyn_baseline --video --headless
 python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Baseline-Play-v0 --num_envs 16
 
-python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Residual-Train-v0 --num_envs 2048 --max_iterations 3000 --run_name codyn_residual --video --headless
+python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Residual-Train-v0 --num_envs 2048 --max_iterations 5000 --run_name codyn_residual --video --headless
 python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Residual-Play-v0 --num_envs 16
 ```
 

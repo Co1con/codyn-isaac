@@ -11,7 +11,7 @@ class G1BaselinePPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 50000
     save_interval = 100
-    experiment_name = "g1_codyn_velocity"
+    experiment_name = "g1_codyn_baseline_velocity"
     empirical_normalization = False
     clip_actions = 5.0
     policy = RslRlPpoActorCriticCfg(
