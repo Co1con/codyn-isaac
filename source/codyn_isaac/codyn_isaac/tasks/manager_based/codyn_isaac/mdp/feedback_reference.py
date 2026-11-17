@@ -11,44 +11,41 @@ from .reference import JOINT_NAMES, GaitReference
 class FeedbackGaitReference(GaitReference):
     """Query the coupled field from actual joint angles in Isaac joint order."""
 
-    def __init__(self, checkpoint, num_envs, device, substeps=4, coupling_gain=0.25, *, half_gain_error_deg=10.0):
-        if not math.isfinite(half_gain_error_deg) or half_gain_error_deg <= 0:
-            raise ValueError("half_gain_error_deg must be finite and positive")
+    def __init__(
+        self, checkpoint, num_envs, device, substeps=4, coupling_gain=0.25,
+        *, gain_limit=2.0, saturation_error_deg=10.0,
+    ):
+        if not math.isfinite(gain_limit) or gain_limit < 1:
+            raise ValueError("gain_limit must be finite and at least one")
+        if not math.isfinite(saturation_error_deg) or saturation_error_deg <= 0:
+            raise ValueError("saturation_error_deg must be finite and positive")
         super().__init__(checkpoint, num_envs, device, substeps=substeps, coupling_gain=coupling_gain)
-        self.half_gain_error_squared = math.radians(half_gain_error_deg) ** 2
+        self.gain_limit = gain_limit
+        self.saturation_error_squared = math.radians(saturation_error_deg) ** 2
 
     def _step_gain(self, state: torch.Tensor, bank: torch.Tensor) -> torch.Tensor:
-        """Scale the horizon using the RMS angular distance to both leg orbits."""
+        """Return separate gains from each leg's squared hip/knee orbit distance."""
         segments = bank.roll(-1, dims=1) - bank
         offsets = state[:, :, None, :] - bank[:, None, :, :]
         segment_length_squared = segments.square().sum(dim=-1).clamp_min(1e-12)
         fractions = (offsets * segments[:, None]).sum(dim=-1) / segment_length_squared[:, None]
         residual = offsets - fractions.clamp(0, 1)[..., None] * segments[:, None]
         leg_distance_squared = residual.square().sum(dim=-1).amin(dim=-1)
-        rms_error_squared = leg_distance_squared.sum(dim=-1) / 4
-        return (1 + rms_error_squared / self.half_gain_error_squared).reciprocal()
+        fraction = (leg_distance_squared / self.saturation_error_squared).clamp_max(1)
+        return 1 + (self.gain_limit - 1) * fraction
 
     @torch.no_grad()
     def predict(self, joint_position: torch.Tensor, command_speed: torch.Tensor, dt: float) -> torch.Tensor:
         """Return the next hip/knee angles in robot coordinates, without mutating the input."""
         state = (joint_position * self.signs).reshape(-1, 2, 2)
         bank = self._bank_at(command_speed)
-        rates = self._coupling_rates(state, bank).reshape(-1, 1)
+        rates = self._coupling_rates(state, bank)
         gain = self._step_gain(state, bank)
         parameters = self.model.parameters_at(command_speed.repeat_interleave(2))
-        state = state.reshape(-1, 2)
-        h = dt / self.substeps * gain.repeat_interleave(2)[:, None]
-
-        def field(q):
-            return self.model.field(q, parameters) * rates
-
-        for _ in range(self.substeps):
-            a = field(state)
-            b = field(state + h * a / 2)
-            c = field(state + h * b / 2)
-            d = field(state + h * c)
-            state = state + h * (a + 2 * b + 2 * c + d) / 6
-        return state.reshape(-1, 4) * self.signs
+        velocity = self.model.field(state.reshape(-1, 2), parameters).reshape_as(state)
+        velocity = velocity * rates[..., None]
+        increment = (dt * gain[..., None] * velocity).flatten(1) * self.signs
+        return joint_position + increment
 
 
 def feedback_oscillator_position(env):
@@ -57,7 +54,8 @@ def feedback_oscillator_position(env):
         env.feedback_gait_reference = FeedbackGaitReference(
             env.cfg.oscillator_checkpoint, env.num_envs, env.device,
             coupling_gain=env.cfg.oscillator_coupling_gain,
-            half_gain_error_deg=env.cfg.oscillator_feedback_half_gain_error_deg,
+            gain_limit=env.cfg.oscillator_feedback_gain_limit,
+            saturation_error_deg=env.cfg.oscillator_feedback_saturation_error_deg,
         )
         names = env.scene["robot"].data.joint_names
         env.feedback_joint_ids = [names.index(name) for name in JOINT_NAMES]

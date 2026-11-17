@@ -45,15 +45,17 @@ their old learned behavior; retraining or fine-tuning is required to learn these
 Policies trained before reference clipping was removed saw a different reference observation.
 
 `g1_codyn_baseline_fb_vel_env_cfg.py` adds a feedback variant of the baseline. At each
-control step, it reads the measured left/right hip pitch and knee angles, converts
-them to oscillator coordinates, and integrates the frozen, speed-conditioned field
-using RK4. The integration horizon is the control interval multiplied by
-`1 / (1 + (E / E_half)^2)`. Each leg's measured hip/knee pair is projected onto the
-nearest segment of the original model orbit at the commanded speed. `E` is the RMS
-of the four angular residuals from those projections. The same gain scales both
-legs. `oscillator_feedback_half_gain_error_deg` sets `E_half` and defaults to 10
-degrees for training and playback. The resulting four reference angles are mapped
-back to robot coordinates and returned through the existing `oscillator_position`
+control step, it evaluates the frozen, speed-conditioned field once at the measured
+left/right hip pitch and knee angles in oscillator coordinates. It maps the coupled
+field velocity back to robot coordinates and adds `dt * gain * velocity` to the
+measured angles, with a fixed control interval of 20 ms. Each measured hip/knee pair
+is projected onto the nearest segment of its original model orbit at the commanded
+speed. Each leg independently computes its Euclidean hip/knee residual norm `E_i`
+and its gain `1 + (gain_limit - 1) * min((E_i / saturation_error)^2, 1)`. The
+original left/right phase coupling still targets a half-cycle separation.
+The training and playback defaults are `oscillator_feedback_gain_limit=2.0` and
+`oscillator_feedback_saturation_error_deg=10.0`. The four reference angles are
+returned through the existing `oscillator_position`
 observation in both the policy and critic. The policy uses the 128-dimensional
 baseline layout and the original symmetry augmentation. The autonomous reference
 supplies the baseline tracking reward, and PPO produces the 29 joint position
