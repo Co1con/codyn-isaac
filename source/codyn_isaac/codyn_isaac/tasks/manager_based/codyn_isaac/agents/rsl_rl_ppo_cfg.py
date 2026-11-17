@@ -1,6 +1,7 @@
 """PPO runner for the G1 29-DoF CoDyn task."""
 
 from isaaclab.utils import configclass
+
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg, RslRlSymmetryCfg
 
 from .. import mdp
@@ -40,6 +41,11 @@ class G1BaselinePPORunnerCfg(RslRlOnPolicyRunnerCfg):
             data_augmentation_func=mdp.compute_g1_symmetric_states,
         ),
     )
+
+
+@configclass
+class G1BaselineFbPPORunnerCfg(G1BaselinePPORunnerCfg):
+    experiment_name = "g1_codyn_baseline_fb_velocity"
 
 
 @configclass

@@ -27,6 +27,10 @@ for name, config in (("Train", "G1CoDynBaselineEnvCfg"), ("Play", "G1CoDynBaseli
 # Explicit baseline names alongside the original task IDs for existing commands.
 for variant, module, configs, runner in (
     ("Baseline", "g1_codyn_baseline_vel_env_cfg", ("G1CoDynBaselineEnvCfg", "G1CoDynBaselinePlayEnvCfg"), "G1BaselinePPORunnerCfg"),
+    (
+        "Baseline-FB", "g1_codyn_baseline_fb_vel_env_cfg",
+        ("G1CoDynBaselineFbEnvCfg", "G1CoDynBaselineFbPlayEnvCfg"), "G1BaselineFbPPORunnerCfg",
+    ),
     ("Residual", "g1_codyn_residual_vel_env_cfg", ("G1CoDynResidualEnvCfg", "G1CoDynResidualPlayEnvCfg"), "G1ResidualPPORunnerCfg"),
 ):
     for mode, config in zip(("Train", "Play"), configs):

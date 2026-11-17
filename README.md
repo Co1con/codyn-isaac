@@ -1,4 +1,4 @@
-# CoDyn G1 baseline and residual tasks
+# CoDyn G1 baseline, feedback, and residual tasks
 
 The original configuration is now `g1_codyn_baseline_vel_env_cfg.py`.
 The original `CoDyn-G1-29DoF-Train-v0` / `Play-v0` task IDs remain compatible.
@@ -37,12 +37,22 @@ progression along the original field without changing its state-space orbits.
 Angles are never clipped or forced to be negatives of the other leg.
 The sinusoidal coupling has an unstable in-phase equilibrium; it does not break
 perfectly identical left/right states by itself. Reset still initializes half-cycle offsets.
-Set the gain to 0 for an uncoupled ablation. No robot-state feedback is introduced yet.
+Set the gain to 0 for an uncoupled ablation. These two tasks use autonomous references.
 
 Both tasks penalize waist pitch/roll deviation with `joint_deviation_l1` at weight
 -2.0, and waist yaw deviation separately at -0.2. Existing exported policies retain
 their old learned behavior; retraining or fine-tuning is required to learn these rewards.
 Policies trained before reference clipping was removed saw a different reference observation.
+
+`g1_codyn_baseline_fb_vel_env_cfg.py` adds a feedback variant of the baseline. At each
+control step, it reads the measured left/right hip pitch and knee angles, converts
+them to oscillator coordinates, and integrates the frozen, speed-conditioned field
+for one control interval using RK4. The resulting four reference angles are mapped
+back to robot coordinates and returned through the existing `oscillator_position`
+observation in both the policy and critic. The policy uses the 128-dimensional
+baseline layout and the original symmetry augmentation. The autonomous reference
+supplies the baseline tracking reward, and PPO produces the 29 joint position
+actions. The feedback runner writes to `logs/rsl_rl/g1_codyn_baseline_fb_velocity/`.
 
 Run from this directory in the existing Isaac Lab environment:
 
@@ -53,6 +63,9 @@ python scripts/rsl_rl/play.py --task G1-29DoF-Baseline-Play-v0 --num_envs 16
 
 python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Baseline-Train-v0 --num_envs 2048 --max_iterations 5000 --run_name codyn_baseline --video --headless
 python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Baseline-Play-v0 --num_envs 16
+
+python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Baseline-FB-Train-v0 --num_envs 2048 --max_iterations 5000 --run_name codyn_baseline_fb --video --headless
+python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Baseline-FB-Play-v0 --num_envs 1
 
 python scripts/rsl_rl/train.py --task CoDyn-G1-29DoF-Residual-Train-v0 --num_envs 2048 --max_iterations 5000 --run_name codyn_residual --video --headless
 python scripts/rsl_rl/play.py --task CoDyn-G1-29DoF-Residual-Play-v0 --num_envs 16
