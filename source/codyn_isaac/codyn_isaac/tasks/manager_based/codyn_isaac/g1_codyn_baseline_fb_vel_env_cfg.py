@@ -34,11 +34,13 @@ class G1CoDynBaselineFbEventsCfg(G1CoDynBaselineEventsCfg):
 
 @configclass
 class G1CoDynBaselineFbEnvCfg(G1CoDynBaselineEnvCfg):
+    oscillator_feedback_half_gain_error_deg: float = 10.0
     observations: G1CoDynBaselineFbObservationsCfg = G1CoDynBaselineFbObservationsCfg()
     events: G1CoDynBaselineFbEventsCfg = G1CoDynBaselineFbEventsCfg()
 
 
 @configclass
 class G1CoDynBaselineFbPlayEnvCfg(G1CoDynBaselinePlayEnvCfg):
+    oscillator_feedback_half_gain_error_deg: float = 10.0
     observations: G1CoDynBaselineFbObservationsCfg = G1CoDynBaselineFbObservationsCfg()
     events: G1CoDynBaselineFbEventsCfg = G1CoDynBaselineFbEventsCfg()

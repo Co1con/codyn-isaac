@@ -47,12 +47,18 @@ Policies trained before reference clipping was removed saw a different reference
 `g1_codyn_baseline_fb_vel_env_cfg.py` adds a feedback variant of the baseline. At each
 control step, it reads the measured left/right hip pitch and knee angles, converts
 them to oscillator coordinates, and integrates the frozen, speed-conditioned field
-for one control interval using RK4. The resulting four reference angles are mapped
+using RK4. The integration horizon is the control interval multiplied by
+`1 / (1 + (E / E_half)^2)`. Each leg's measured hip/knee pair is projected onto the
+nearest segment of the original model orbit at the commanded speed. `E` is the RMS
+of the four angular residuals from those projections. The same gain scales both
+legs. `oscillator_feedback_half_gain_error_deg` sets `E_half` and defaults to 10
+degrees for training and playback. The resulting four reference angles are mapped
 back to robot coordinates and returned through the existing `oscillator_position`
 observation in both the policy and critic. The policy uses the 128-dimensional
 baseline layout and the original symmetry augmentation. The autonomous reference
 supplies the baseline tracking reward, and PPO produces the 29 joint position
 actions. The feedback runner writes to `logs/rsl_rl/g1_codyn_baseline_fb_velocity/`.
+Start a fresh feedback run to train with the error-scaled reference.
 
 Run from this directory in the existing Isaac Lab environment:
 
